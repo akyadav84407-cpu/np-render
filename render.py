@@ -95,6 +95,12 @@ body { font-family: 'Noto Sans','Noto Sans Devanagari','FreeSans','Mukta',sans-s
 table.t { width:100%; border-collapse:collapse; margin:.6mm 0; font-size:6.4pt; } table.t th { background:#FFE27A; color:#0B2A6B; border:.2mm solid #d7b53a; padding:.2mm .8mm; } table.t td { border:.2mm solid #cbd5e1; padding:.2mm .8mm; }
 .ftr { position:absolute; left:4mm; right:4mm; bottom:3mm; height:8mm; background:#0B2A6B; color:#fff; border-radius:2mm; display:flex; align-items:center; justify-content:space-between; padding:0 4mm; font-size:6.4pt; font-weight:700; }
 .ftr .b { color:#FFD21F; font-weight:800; font-size:9pt; }
+.mq { border:.3mm solid #9db3d6; border-radius:2.5mm; margin:3mm 0; overflow:hidden; }
+.mq .qh { background:#0B2A6B; color:#fff; padding:2mm 3mm; font-size:9.5pt; font-weight:800; display:flex; justify-content:space-between; }
+.mq .qh span { background:#FFD21F; color:#0B2A6B; border-radius:2mm; padding:0 2.5mm; }
+.mq .qb { padding:2.5mm 3mm; font-size:9pt; line-height:1.45; } .mq .qb .en { color:#374151; font-size:8.4pt; margin-top:1mm; }
+.mq .ans { background:#FFF9DB; border-top:.3mm solid #FFD21F; padding:2.5mm 3mm; font-size:9pt; line-height:1.5; } .mq .ans b { color:#0B2A6B; }
+.mnote { font-size:7.6pt; color:#6b7280; margin:1mm 0 0; }
 """
 SHRINK_JS = """<script>
 document.querySelectorAll('.card .bd').forEach(function(b){var fs=7.3;while(b.scrollHeight>b.clientHeight+1&&fs>4.9){fs-=0.15;b.style.fontSize=fs+'pt';}});
@@ -115,8 +121,10 @@ def build_topics_html(p):
     cards = p.get('cards', [])
     lg = logo_uri(p)
     pages = []
-    total = max(1, (len(cards) + 14) // 15)
-    for pg in range(total):
+    mains = [m for m in (p.get('mains') or []) if isinstance(m, dict) and m.get('q_hi') and m.get('a_hi')][:2]
+    total = max(1, (len(cards) + 14) // 15) + (1 if mains else 0)
+    card_pages = total - (1 if mains else 0)
+    for pg in range(card_pages):
         chunk = cards[pg * 15:(pg + 1) * 15]
         body = ''.join(_card(c, pg * 15 + i + 1) for i, c in enumerate(chunk))
         body += ''.join('<div class="card" style="border-style:dashed;border-color:#e5e7eb"></div>' for _ in range(15 - len(chunk)))
@@ -128,6 +136,17 @@ def build_topics_html(p):
             f'<div class="pill">{esc(p.get("subject", ""))} • {esc(p.get("date", ""))}</div></div></div>'
             f'<div class="grid">{body}</div>'
             f'<div class="ftr"><span class="b">NAUKARI PAKKI</span><span>DETAILED STUDY NOTES &nbsp;|&nbsp; EXAM-ORIENTED LEARNING</span><span>Page {pg + 1} of {total}</span></div></div>')
+    if mains:
+        lg2 = (f'<img src="{lg}">' if lg else '')
+        blocks = ''.join(
+            f'<div class="mq"><div class="qh">Q{i + 1}. MAINS PRACTICE / मुख्य परीक्षा अभ्यास<span>{esc(m.get("marks", ""))} Marks • {esc(m.get("words", ""))} words</span></div>'
+            f'<div class="qb"><b>{esc(m.get("q_hi"))}</b><div class="en">{esc(m.get("q_en"))}</div></div>'
+            f'<div class="ans"><b>Model answer / आदर्श उत्तर:</b><br>{esc(m.get("a_hi"))}</div></div>' for i, m in enumerate(mains))
+        pages.append(
+            f'<div class="page"><div class="top">{lg2}<div><div class="brand">NAUKARI PAKKI</div><div class="sub">Mains Answer Writing • BEO / PCS style</div></div>'
+            f'<div class="mid"><div class="gs">MAINS PRACTICE</div><div class="pill">{esc(p.get("subject", ""))} • {esc(p.get("date", ""))}</div></div></div>'
+            f'<div style="padding:2mm 3mm">{blocks}<p class="mnote">Questions are based on today\'s topics. Write the answer yourself first, then compare with the model answer.</p></div>'
+            f'<div class="ftr"><span class="b">NAUKARI PAKKI</span><span>DETAILED STUDY NOTES &nbsp;|&nbsp; EXAM-ORIENTED LEARNING</span><span>Page {total} of {total}</span></div></div>')
     return f'<!doctype html><html lang="hi"><head><meta charset="utf-8"><style>{TOPIC_CSS}</style></head><body>{"".join(pages)}{SHRINK_JS}</body></html>'
 
 def _run(cmd, timeout):
