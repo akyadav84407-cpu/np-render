@@ -45,6 +45,18 @@ def do_render():
         return jsonify(error='unauthorised'), 401
     try:
         payload = json.loads(raw)
+        if payload.get('kind') == 'match':
+            job = tempfile.mkdtemp(dir=TMP_ROOT)
+            try:
+                with sem:
+                    out = os.path.join(job, 'm.png')
+                    try:
+                        render.render_match_png(payload, out)
+                    except Exception as e:
+                        return jsonify(error='render failed: ' + str(e)[:200]), 500
+                    return Response(open(out, 'rb').read(), mimetype='image/png', headers={'X-NP-Format': 'png1'})
+            finally:
+                shutil.rmtree(job, ignore_errors=True)
         items = payload.get('cards') if 'cards' in payload else payload.get('questions')
         assert isinstance(items, list) and 0 < len(items) <= 200
     except Exception:
