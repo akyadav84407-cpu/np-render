@@ -118,6 +118,8 @@ def _card(c, n):
             f'<i>{esc(c.get("heading_hi"))}</i></div></div><div class="bd"><ul>{pts}</ul>{hl}{tb}</div></div>')
 
 def build_topics_html(p):
+    EN = p.get('lang') == 'en'
+    LANGC = 'en' if EN else 'hi'
     cards = p.get('cards', [])
     lg = logo_uri(p)
     pages = []
@@ -131,7 +133,7 @@ def build_topics_html(p):
         part = f'<span class="part">PART {pg + 1}</span>' if total > 1 else ''
         pages.append(
             f'<div class="page"><div class="top">' + (f'<img src="{lg}">' if lg else '') +
-            f'<div><div class="brand">NAUKARI PAKKI</div><div class="sub">Exam Notes • Quick Revision • Bilingual</div></div>'
+            f'<div><div class="brand">NAUKARI PAKKI</div><div class="sub">Exam Notes • Quick Revision • {"English" if EN else "Bilingual"}</div></div>'
             f'<div class="mid"><div class="gs">{esc(p.get("title", "GENERAL STUDIES | DETAILED STUDY NOTES"))}{part}</div>'
             f'<div class="pill">{esc(p.get("subject", ""))} • {esc(p.get("date", ""))}</div></div></div>'
             f'<div class="grid">{body}</div>'
@@ -139,15 +141,15 @@ def build_topics_html(p):
     if mains:
         lg2 = (f'<img src="{lg}">' if lg else '')
         blocks = ''.join(
-            f'<div class="mq"><div class="qh">Q{i + 1}. MAINS PRACTICE / मुख्य परीक्षा अभ्यास<span>{esc(m.get("marks", ""))} Marks • {esc(m.get("words", ""))} words</span></div>'
-            f'<div class="qb"><b>{esc(m.get("q_hi"))}</b><div class="en">{esc(m.get("q_en"))}</div></div>'
-            f'<div class="ans"><b>Model answer / आदर्श उत्तर:</b><br>{esc(m.get("a_hi"))}</div></div>' for i, m in enumerate(mains))
+            f'<div class="mq"><div class="qh">Q{i + 1}. {"MAINS PRACTICE" if EN else "MAINS PRACTICE / मुख्य परीक्षा अभ्यास"}<span>{esc(m.get("marks", ""))} Marks • {esc(m.get("words", ""))} words</span></div>'
+            f'<div class="qb"><b>{esc(m.get("q_hi"))}</b>' + (f'<div class="en">{esc(m.get("q_en"))}</div>' if m.get("q_en") else '') + '</div>'
+            f'<div class="ans"><b>{"Model answer:" if EN else "Model answer / आदर्श उत्तर:"}</b><br>{esc(m.get("a_hi"))}</div></div>' for i, m in enumerate(mains))
         pages.append(
             f'<div class="page"><div class="top">{lg2}<div><div class="brand">NAUKARI PAKKI</div><div class="sub">Mains Answer Writing • BEO / PCS style</div></div>'
             f'<div class="mid"><div class="gs">MAINS PRACTICE</div><div class="pill">{esc(p.get("subject", ""))} • {esc(p.get("date", ""))}</div></div></div>'
             f'<div style="padding:2mm 3mm">{blocks}<p class="mnote">Questions are based on today\'s topics. Write the answer yourself first, then compare with the model answer.</p></div>'
             f'<div class="ftr"><span class="b">NAUKARI PAKKI</span><span>DETAILED STUDY NOTES &nbsp;|&nbsp; EXAM-ORIENTED LEARNING</span><span>Page {total} of {total}</span></div></div>')
-    return f'<!doctype html><html lang="hi"><head><meta charset="utf-8"><style>{TOPIC_CSS}</style></head><body>{"".join(pages)}{SHRINK_JS}</body></html>'
+    return f'<!doctype html><html lang="{LANGC}"><head><meta charset="utf-8"><style>{TOPIC_CSS}</style></head><body>{"".join(pages)}{SHRINK_JS}</body></html>'
 
 def _run(cmd, timeout):
     return subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=timeout)
@@ -169,49 +171,3 @@ def render_png(pdf, out_prefix, dpi=170):
         raise RuntimeError('pdftoppm missing')
     _run(['pdftoppm', '-png', '-r', str(dpi), pdf, out_prefix], 120)
     return sorted(glob.glob(out_prefix + '*.png'))
-
-
-MATCH_CSS = """
-* { box-sizing: border-box; }
-html, body { margin:0; padding:0; background:#fff; }
-body { font-family: 'Noto Sans','Noto Sans Devanagari','FreeSans','Mukta',sans-serif; color:#111827; width:1000px; }
-.card { border:3px solid #0B2A6B; border-radius:16px; overflow:hidden; background:#fff; }
-.hd { background:#0B2A6B; color:#fff; padding:14px 22px; font-size:30px; font-weight:800; border-bottom:6px solid #FFD21F; display:flex; justify-content:space-between; }
-.hd span { color:#FFD21F; font-size:24px; font-weight:700; }
-.stem { padding:16px 22px 6px; font-size:27px; line-height:1.4; font-weight:700; }
-.stem div + div { color:#374151; font-weight:600; font-size:25px; }
-table { width:100%; border-collapse:collapse; margin:10px 0 0; }
-th { background:#FFE27A; color:#0B2A6B; font-size:26px; padding:10px 14px; border:2px solid #d7b53a; width:50%; }
-td { border:2px solid #cbd5e1; padding:12px 14px; font-size:26px; line-height:1.4; vertical-align:top; }
-td b { color:#0B2A6B; }
-.ft { background:#0B2A6B; color:#FFD21F; text-align:center; font-size:20px; font-weight:700; padding:8px; }
-"""
-
-def build_match_html(p):
-    rows = [r for r in (p.get('rows') or []) if isinstance(r, (list, tuple)) and len(r) == 2]
-    two = any(str(r[1]).strip() for r in rows)
-    if two:
-        tb = '<table><tr><th>List-I / सूची-I</th><th>List-II / सूची-II</th></tr>' + ''.join(
-            f'<tr><td>{esc(l)}</td><td>{esc(r)}</td></tr>' for l, r in rows) + '</table>'
-    else:
-        tb = '<table>' + ''.join(f'<tr><td>{esc(l)}</td></tr>' for l, _ in rows) + '</table>'
-    stem = ''.join(f'<div>{esc(x)}</div>' for x in (p.get('q_en'), p.get('q_hi')) if x)
-    return (f'<!doctype html><html lang="hi"><head><meta charset="utf-8"><style>{MATCH_CSS}</style></head><body><div class="card" id="c">'
-            f'<div class="hd">MATCH THE COLUMN / कॉलम मिलान<span>Q {esc(p.get("no", ""))}</span></div>'
-            f'<div class="stem">{stem}</div>{tb}<div class="ft">NAUKARI PAKKI • naukaripakki.in</div></div>'
-            '<script>document.title=String(document.getElementById("c").offsetHeight+6);</script></body></html>')
-
-def render_match_png(payload, out_png, timeout=60):
-    if not CHROME:
-        raise RuntimeError('Chrome/Chromium not installed')
-    with tempfile.TemporaryDirectory() as d:
-        h = os.path.join(d, 'm.html'); open(h, 'w', encoding='utf-8').write(build_match_html(payload))
-        base = [CHROME, '--headless=new', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage', f'--user-data-dir={d}/prof']
-        dom = _run(base + ['--window-size=1000,3000', '--dump-dom', 'file://' + h], timeout).stdout.decode('utf-8', 'ignore')
-        import re
-        m = re.search(r'<title>(\d+)</title>', dom)
-        height = min(3000, max(300, int(m.group(1)) if m else 1200))
-        _run(base + [f'--screenshot={out_png}', f'--window-size=1000,{height}', 'file://' + h], timeout)
-    if not os.path.isfile(out_png) or os.path.getsize(out_png) < 1500:
-        raise RuntimeError('match png not produced')
-    return out_png
