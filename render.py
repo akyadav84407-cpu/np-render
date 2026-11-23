@@ -82,15 +82,16 @@ body { font-family: 'Noto Sans','Noto Sans Devanagari','FreeSans','Mukta',sans-s
 .top .brand { font-weight:800; font-size:19pt; color:#FFD21F; line-height:1; } .top .sub { font-size:6.6pt; color:#fff; margin-top:1mm; }
 .top .mid { margin-left:auto; text-align:right; } .top .gs { font-weight:800; font-size:12.5pt; } .top .part { display:inline-block; background:#FFD21F; color:#0B2A6B; font-weight:800; border-radius:2mm; padding:0 3mm; margin-left:2mm; font-size:11pt; }
 .top .pill { margin-top:1.2mm; background:#C8161D; border-radius:3mm; padding:.4mm 3mm; font-size:6.8pt; font-weight:700; display:inline-block; }
-.grid { display:grid; grid-template-columns:repeat(3, 1fr); grid-template-rows:repeat(5, 1fr); gap:2mm; height:calc(297mm - 4mm - 21mm - 2mm - 13mm); margin-top:2mm; }
+.grid { display:grid; grid-template-columns:repeat(3, 1fr); grid-template-rows:repeat(4, 1fr); gap:2mm; height:calc(297mm - 4mm - 21mm - 2mm - 13mm); margin-top:2mm; }
 .card { border:.25mm solid #9db3d6; border-radius:2mm; overflow:hidden; display:flex; flex-direction:column; background:#fff; min-height:0; }
 .card .hd { background:#0B2A6B; color:#fff; padding:.9mm 1.5mm .9mm 1mm; display:flex; align-items:center; min-height:9mm; flex:0 0 auto; }
 .card .no { flex:0 0 auto; background:#FFD21F; color:#0B2A6B; font-weight:800; font-size:9.5pt; border-radius:1.6mm; padding:0 1.6mm; margin-right:1.4mm; line-height:1.35; }
 .card .ht { font-weight:800; font-size:7.3pt; line-height:1.18; } .card .ht i { font-style:normal; font-weight:700; color:#FFE27A; display:block; font-size:6.7pt; }
-.card .bd { padding:1.1mm 1.5mm; font-size:7.3pt; line-height:1.27; flex:1 1 auto; overflow:hidden; }
+.card .bd { padding:1.1mm 1.5mm; font-size:7.6pt; line-height:1.27; flex:1 1 auto; overflow:hidden; }
 .card ul { list-style:none; margin:0; padding:0; } .card li { padding-left:2.4mm; position:relative; margin-bottom:.5mm; }
 .card li:before { content:""; position:absolute; left:0; top:1.1mm; width:1.2mm; height:1.2mm; background:#C8861D; }
 .card li b { color:#0B2A6B; }
+.sec { font-weight:800; color:#0B2A6B; font-size:.92em; margin:.6mm 0 .2mm; border-bottom:.2mm solid #FFD21F; } .sec2 { margin:.2mm 0 .5mm; }
 .hl { background:#FFF1B8; border-radius:1mm; padding:.5mm 1.3mm; margin:.7mm 0; font-weight:600; }
 table.t { width:100%; border-collapse:collapse; margin:.6mm 0; font-size:6.4pt; } table.t th { background:#FFE27A; color:#0B2A6B; border:.2mm solid #d7b53a; padding:.2mm .8mm; } table.t td { border:.2mm solid #cbd5e1; padding:.2mm .8mm; }
 .ftr { position:absolute; left:4mm; right:4mm; bottom:3mm; height:8mm; background:#0B2A6B; color:#fff; border-radius:2mm; display:flex; align-items:center; justify-content:space-between; padding:0 4mm; font-size:6.4pt; font-weight:700; }
@@ -103,9 +104,10 @@ table.t { width:100%; border-collapse:collapse; margin:.6mm 0; font-size:6.4pt; 
 .mnote { font-size:7.6pt; color:#6b7280; margin:1mm 0 0; }
 """
 SHRINK_JS = """<script>
-document.querySelectorAll('.card .bd').forEach(function(b){var fs=7.3;while(b.scrollHeight>b.clientHeight+1&&fs>4.9){fs-=0.15;b.style.fontSize=fs+'pt';}});
+document.querySelectorAll('.card .bd').forEach(function(b){var fs=7.6;while(b.scrollHeight>b.clientHeight+1&&fs>4.9){fs-=0.15;b.style.fontSize=fs+'pt';}});
 </script>"""
 
+EN_ = False
 def _card(c, n):
     pts = ''.join(f'<li><b>{esc(p.get("k", ""))}</b>{": " if p.get("k") else ""}{esc(p.get("v", ""))}</li>' for p in c.get('points', []))
     hl = f'<div class="hl">{esc(c.get("highlight"))}</div>' if c.get('highlight') else ''
@@ -114,22 +116,28 @@ def _card(c, n):
     if t and t.get('head') and t.get('rows'):
         tb = '<table class="t"><tr>' + ''.join(f'<th>{esc(h)}</th>' for h in t['head']) + '</tr>' + \
              ''.join('<tr>' + ''.join(f'<td>{esc(x)}</td>' for x in r) + '</tr>' for r in t['rows']) + '</table>'
+    ab = ''
+    if c.get('about'): ab += f'<div class="sec">1. {"About" if EN_ else "परिचय / About"}</div><div class="sec2">{esc(c.get("about"))}</div>'
+    if c.get('background'): ab += f'<div class="sec">2. {"Background" if EN_ else "पृष्ठभूमि / Background"}</div><div class="sec2">{esc(c.get("background"))}</div>'
+    if ab: ab += f'<div class="sec">3. {"Important points" if EN_ else "महत्वपूर्ण बिंदु / Important points"}</div>'
+    n = c.get('no') or n
     return (f'<div class="card"><div class="hd"><span class="no">{n:02d}</span><div class="ht">{esc(c.get("heading_en"))}'
-            f'<i>{esc(c.get("heading_hi"))}</i></div></div><div class="bd"><ul>{pts}</ul>{hl}{tb}</div></div>')
+            f'<i>{esc(c.get("heading_hi"))}</i></div></div><div class="bd">{ab}<ul>{pts}</ul>{hl}{tb}</div></div>')
 
 def build_topics_html(p):
-    EN = p.get('lang') == 'en'
+    global EN_
+    EN = p.get('lang') == 'en'; EN_ = EN
     LANGC = 'en' if EN else 'hi'
     cards = p.get('cards', [])
     lg = logo_uri(p)
     pages = []
     mains = [m for m in (p.get('mains') or []) if isinstance(m, dict) and m.get('q_hi') and m.get('a_hi')][:2]
-    total = max(1, (len(cards) + 14) // 15) + (1 if mains else 0)
+    total = max(1, (len(cards) + 11) // 12) + (1 if mains else 0)
     card_pages = total - (1 if mains else 0)
     for pg in range(card_pages):
-        chunk = cards[pg * 15:(pg + 1) * 15]
-        body = ''.join(_card(c, pg * 15 + i + 1) for i, c in enumerate(chunk))
-        body += ''.join('<div class="card" style="border-style:dashed;border-color:#e5e7eb"></div>' for _ in range(15 - len(chunk)))
+        chunk = cards[pg * 12:(pg + 1) * 12]
+        body = ''.join(_card(c, pg * 12 + i + 1) for i, c in enumerate(chunk))
+        body += ''.join('<div class="card" style="border-style:dashed;border-color:#e5e7eb"></div>' for _ in range(12 - len(chunk)))
         part = f'<span class="part">PART {pg + 1}</span>' if total > 1 else ''
         pages.append(
             f'<div class="page"><div class="top">' + (f'<img src="{lg}">' if lg else '') +
