@@ -117,9 +117,9 @@ def _card(c, n):
         tb = '<table class="t"><tr>' + ''.join(f'<th>{esc(h)}</th>' for h in t['head']) + '</tr>' + \
              ''.join('<tr>' + ''.join(f'<td>{esc(x)}</td>' for x in r) + '</tr>' for r in t['rows']) + '</table>'
     ab = ''
-    if c.get('about'): ab += f'<div class="sec">1. {"About" if EN_ else "परिचय / About"}</div><div class="sec2">{esc(c.get("about"))}</div>'
+    if c.get('about'): ab += f'<div class="sec">1. {"Key Summary" if EN_ else "मुख्य सार / Key Summary"}</div><div class="sec2">{esc(c.get("about"))}</div>'
     if c.get('background'): ab += f'<div class="sec">2. {"Background" if EN_ else "पृष्ठभूमि / Background"}</div><div class="sec2">{esc(c.get("background"))}</div>'
-    if ab: ab += f'<div class="sec">3. {"Important points" if EN_ else "महत्वपूर्ण बिंदु / Important points"}</div>'
+    if ab: ab += f'<div class="sec">{"2" if not c.get("background") else "3"}. {"Important points" if EN_ else "महत्वपूर्ण बिंदु / Important points"}</div>'
     n = c.get('no') or n
     return (f'<div class="card"><div class="hd"><span class="no">{n:02d}</span><div class="ht">{esc(c.get("heading_en"))}'
             f'<i>{esc(c.get("heading_hi"))}</i></div></div><div class="bd">{ab}<ul>{pts}</ul>{hl}{tb}</div></div>')
