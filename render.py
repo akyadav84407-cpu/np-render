@@ -82,12 +82,12 @@ body { font-family: 'Noto Sans','Noto Sans Devanagari','FreeSans','Mukta',sans-s
 .top .brand { font-weight:800; font-size:19pt; color:#FFD21F; line-height:1; } .top .sub { font-size:6.6pt; color:#fff; margin-top:1mm; }
 .top .mid { margin-left:auto; text-align:right; } .top .gs { font-weight:800; font-size:12.5pt; } .top .part { display:inline-block; background:#FFD21F; color:#0B2A6B; font-weight:800; border-radius:2mm; padding:0 3mm; margin-left:2mm; font-size:11pt; }
 .top .pill { margin-top:1.2mm; background:#C8161D; border-radius:3mm; padding:.4mm 3mm; font-size:6.8pt; font-weight:700; display:inline-block; }
-.grid { display:grid; grid-template-columns:repeat(3, 1fr); grid-template-rows:repeat(4, 1fr); gap:2mm; height:calc(297mm - 4mm - 21mm - 2mm - 13mm); margin-top:2mm; }
+.grid { display:grid; grid-template-columns:repeat(3, 1fr); grid-template-rows:repeat(3, 1fr); gap:2mm; height:calc(297mm - 4mm - 21mm - 2mm - 13mm); margin-top:2mm; }
 .card { border:.25mm solid #9db3d6; border-radius:2mm; overflow:hidden; display:flex; flex-direction:column; background:#fff; min-height:0; }
 .card .hd { background:#0B2A6B; color:#fff; padding:.9mm 1.5mm .9mm 1mm; display:flex; align-items:center; min-height:9mm; flex:0 0 auto; }
 .card .no { flex:0 0 auto; background:#FFD21F; color:#0B2A6B; font-weight:800; font-size:9.5pt; border-radius:1.6mm; padding:0 1.6mm; margin-right:1.4mm; line-height:1.35; }
-.card .ht { font-weight:800; font-size:7.3pt; line-height:1.18; } .card .ht i { font-style:normal; font-weight:700; color:#FFE27A; display:block; font-size:6.7pt; }
-.card .bd { padding:1.1mm 1.5mm; font-size:7.6pt; line-height:1.27; flex:1 1 auto; overflow:hidden; }
+.card .ht { font-weight:800; font-size:8.2pt; line-height:1.18; } .card .ht i { font-style:normal; font-weight:700; color:#FFE27A; display:block; font-size:7.4pt; }
+.card .bd { padding:1.4mm 1.8mm; font-size:9.2pt; line-height:1.3; flex:1 1 auto; overflow:hidden; }
 .card ul { list-style:none; margin:0; padding:0; } .card li { padding-left:2.4mm; position:relative; margin-bottom:.5mm; }
 .card li:before { content:""; position:absolute; left:0; top:1.1mm; width:1.2mm; height:1.2mm; background:#C8861D; }
 .card li b { color:#0B2A6B; }
@@ -101,10 +101,14 @@ table.t { width:100%; border-collapse:collapse; margin:.6mm 0; font-size:6.4pt; 
 .mq .qh span { background:#FFD21F; color:#0B2A6B; border-radius:2mm; padding:0 2.5mm; }
 .mq .qb { padding:2.5mm 3mm; font-size:9pt; line-height:1.45; } .mq .qb .en { color:#374151; font-size:8.4pt; margin-top:1mm; }
 .mq .ans { background:#FFF9DB; border-top:.3mm solid #FFD21F; padding:2.5mm 3mm; font-size:9pt; line-height:1.5; } .mq .ans b { color:#0B2A6B; }
+.mbox { grid-column:1/-1; border:.3mm solid #9db3d6; border-radius:2mm; overflow:hidden; font-size:9.2pt; line-height:1.3; background:#fff; min-height:0; display:flex; flex-direction:column; }
+.mbox .mq { margin:0; border:0; border-bottom:.3mm solid #9db3d6; border-radius:0; }
+.mbox .mq .qh { padding:.8mm 2mm; font-size:1em; } .mbox .mq .qb, .mbox .mq .ans { padding:.8mm 2mm; font-size:1em; line-height:1.28; } .mbox .mq .qb .en { font-size:.92em; margin-top:.3mm; }
 .mnote { font-size:7.6pt; color:#6b7280; margin:1mm 0 0; }
 """
 SHRINK_JS = """<script>
-document.querySelectorAll('.card .bd').forEach(function(b){var fs=7.6;while(b.scrollHeight>b.clientHeight+1&&fs>4.9){fs-=0.15;b.style.fontSize=fs+'pt';}});
+document.querySelectorAll('.card .bd').forEach(function(b){var fs=9.2;while(b.scrollHeight>b.clientHeight+1&&fs>4.9){fs-=0.15;b.style.fontSize=fs+'pt';}});
+document.querySelectorAll('.mbox').forEach(function(b){var fs=8.6;while(b.scrollHeight>b.clientHeight+1&&fs>5){fs-=0.15;b.style.fontSize=fs+'pt';}});
 </script>"""
 
 EN_ = False
@@ -132,13 +136,25 @@ def build_topics_html(p):
     lg = logo_uri(p)
     pages = []
     mains = [m for m in (p.get('mains') or []) if isinstance(m, dict) and m.get('q_hi') and m.get('a_hi')][:2]
-    total = max(1, (len(cards) + 11) // 12) + (1 if mains else 0)
-    card_pages = total - (1 if mains else 0)
+    PER = 9
+    card_pages = max(1, (len(cards) + PER - 1) // PER)
+    last_n = len(cards) - (card_pages - 1) * PER if cards else 0
+    rows_left = 3 - ((last_n + 2) // 3)
+    inline_mains = bool(mains) and rows_left >= 1                 # the answer-writing practice fills the empty rows of the last card page
+    total = card_pages + (1 if mains and not inline_mains else 0)
+    def mq_html(m, i):
+        return (f'<div class="mq"><div class="qh">Q{i + 1}. {"MAINS PRACTICE" if EN else "MAINS PRACTICE / मुख्य परीक्षा अभ्यास"}<span>{esc(m.get("marks", ""))} Marks • {esc(m.get("words", ""))} words</span></div>'
+                f'<div class="qb"><b>{esc(m.get("q_hi"))}</b>' + (f'<div class="en">{esc(m.get("q_en"))}</div>' if m.get("q_en") else '') + '</div>'
+                f'<div class="ans"><b>{"Model answer:" if EN else "Model answer / आदर्श उत्तर:"}</b><br>{esc(m.get("a_hi"))}</div></div>')
     for pg in range(card_pages):
-        chunk = cards[pg * 12:(pg + 1) * 12]
-        body = ''.join(_card(c, pg * 12 + i + 1) for i, c in enumerate(chunk))
-        body += ''.join('<div class="card" style="border-style:dashed;border-color:#e5e7eb"></div>' for _ in range(12 - len(chunk)))
-        part = f'<span class="part">PART {pg + 1}</span>' if total > 1 else ''
+        chunk = cards[pg * PER:(pg + 1) * PER]
+        body = ''.join(_card(c, pg * PER + i + 1) for i, c in enumerate(chunk))
+        if inline_mains and pg == card_pages - 1:
+            body += ''.join('<div class="card" style="border:0"></div>' for _ in range((3 - len(chunk) % 3) % 3))
+            body += f'<div class="mbox" style="grid-row:span {rows_left}">' + ''.join(mq_html(m, i) for i, m in enumerate(mains)) + '</div>'
+        else:
+            body += ''.join('<div class="card" style="border-style:dashed;border-color:#e5e7eb"></div>' for _ in range(PER - len(chunk)))
+        part = f'<span class="part">PART {pg + 1}</span>' if card_pages > 1 else ''
         pages.append(
             f'<div class="page"><div class="top">' + (f'<img src="{lg}">' if lg else '') +
             f'<div><div class="brand">NAUKARI PAKKI</div><div class="sub">Exam Notes • Quick Revision • {"English" if EN else "Bilingual"}</div></div>'
@@ -146,12 +162,9 @@ def build_topics_html(p):
             f'<div class="pill">{esc(p.get("subject", ""))} • {esc(p.get("date", ""))}</div></div></div>'
             f'<div class="grid">{body}</div>'
             f'<div class="ftr"><span class="b">NAUKARI PAKKI</span><span>DETAILED STUDY NOTES &nbsp;|&nbsp; EXAM-ORIENTED LEARNING</span><span>Page {pg + 1} of {total}</span></div></div>')
-    if mains:
+    if mains and not inline_mains:
         lg2 = (f'<img src="{lg}">' if lg else '')
-        blocks = ''.join(
-            f'<div class="mq"><div class="qh">Q{i + 1}. {"MAINS PRACTICE" if EN else "MAINS PRACTICE / मुख्य परीक्षा अभ्यास"}<span>{esc(m.get("marks", ""))} Marks • {esc(m.get("words", ""))} words</span></div>'
-            f'<div class="qb"><b>{esc(m.get("q_hi"))}</b>' + (f'<div class="en">{esc(m.get("q_en"))}</div>' if m.get("q_en") else '') + '</div>'
-            f'<div class="ans"><b>{"Model answer:" if EN else "Model answer / आदर्श उत्तर:"}</b><br>{esc(m.get("a_hi"))}</div></div>' for i, m in enumerate(mains))
+        blocks = ''.join(mq_html(m, i) for i, m in enumerate(mains))
         pages.append(
             f'<div class="page"><div class="top">{lg2}<div><div class="brand">NAUKARI PAKKI</div><div class="sub">Mains Answer Writing • BEO / PCS style</div></div>'
             f'<div class="mid"><div class="gs">MAINS PRACTICE</div><div class="pill">{esc(p.get("subject", ""))} • {esc(p.get("date", ""))}</div></div></div>'
