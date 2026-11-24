@@ -107,7 +107,7 @@ table.t { width:100%; border-collapse:collapse; margin:.6mm 0; font-size:6.4pt; 
 .mnote { font-size:7.6pt; color:#6b7280; margin:1mm 0 0; }
 """
 SHRINK_JS = """<script>
-document.querySelectorAll('.card .bd').forEach(function(b){var fs=9.2;while(b.scrollHeight>b.clientHeight+1&&fs>4.9){fs-=0.15;b.style.fontSize=fs+'pt';}});
+document.querySelectorAll('.card .bd').forEach(function(b){var fs=9.2;b.style.fontSize=fs+'pt';if(b.scrollHeight<=b.clientHeight+1){while(fs<11.2){var t=fs+0.15;b.style.fontSize=t+'pt';if(b.scrollHeight>b.clientHeight+1){b.style.fontSize=fs+'pt';break;}fs=t;}}else{while(b.scrollHeight>b.clientHeight+1&&fs>4.9){fs-=0.15;b.style.fontSize=fs+'pt';}}});
 document.querySelectorAll('.mbox').forEach(function(b){var fs=8.6;while(b.scrollHeight>b.clientHeight+1&&fs>5){fs-=0.15;b.style.fontSize=fs+'pt';}});
 </script>"""
 
